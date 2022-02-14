@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Wordle Helper</title>
+	<link rel="stylesheet" href="style.css">
+	<script src="script.js"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+</head>
+<body>
+	<div class="container">
+		<div class="row align-items-center" id="mystery">
+			<div class="col-2" id="wordlable">
+				<h1>Word:</h1>
+			</div>
+			<div class="col">
+				<input class="letter" type="text" maxlength="1" placeholder="?" value="?">
+				<input class="letter" type="text" maxlength="1" placeholder="?" value="?">
+				<input class="letter" type="text" maxlength="1" placeholder="?" value="?">
+				<input class="letter" type="text" maxlength="1" placeholder="?" value="?">
+				<input class="letter" type="text" maxlength="1" placeholder="?" value="?">
+			</div>
+			<div class="col-2">
+				<button class="btn btn-primary" id="reset">reset</button>
+			</div>
+		</div>
+		<div class="row align-items-center" id="isin" >
+			<div class="col-2" id="isinlable">
+				<h1>Is in:</h1>
+			</div>
+			<div class="col">
+				<button class="mybuttonin" id="in1">A</button>
+				<button class="mybuttonin" id="in2">B</button>
+				<button class="mybuttonin" id="in3">C</button>
+				<button class="mybuttonin" id="in4">D</button>
+				<button class="mybuttonin" id="in5">E</button>
+				<button class="mybuttonin" id="in6">F</button>
+				<button class="mybuttonin" id="in7">G</button>
+				<button class="mybuttonin" id="in8">H</button>
+				<button class="mybuttonin" id="in9">I</button>
+				<button class="mybuttonin" id="in10">J</button>
+				<button class="mybuttonin" id="in11">K</button>
+				<button class="mybuttonin" id="in12">L</button>
+				<button class="mybuttonin" id="in13">M</button>
+				<button class="mybuttonin" id="in14">N</button>
+				<button class="mybuttonin" id="in15">O</button>
+				<button class="mybuttonin" id="in16">P</button>
+				<button class="mybuttonin" id="in17">Q</button>
+				<button class="mybuttonin" id="in18">R</button>
+				<button class="mybuttonin" id="in19">S</button>
+				<button class="mybuttonin" id="in20">T</button>
+				<button class="mybuttonin" id="in21">U</button>
+				<button class="mybuttonin" id="in22">V</button>
+				<button class="mybuttonin" id="in23">W</button>
+				<button class="mybuttonin" id="in24">X</button>
+				<button class="mybuttonin" id="in25">Y</button>
+				<button class="mybuttonin" id="in26">Z</button>
+			</div>
+		</div>
+		<div class="row" id="isout">
+			<div class="col-2" id="isoutlable">
+				<h1>Is out:</h1>
+			</div>
+			<div class="col">
+				<button class="mybuttonout" id="out1">A</button>
+				<button class="mybuttonout" id="out2">B</button>
+				<button class="mybuttonout" id="out3">C</button>
+				<button class="mybuttonout" id="out4">D</button>
+				<button class="mybuttonout" id="out5">E</button>
+				<button class="mybuttonout" id="out6">F</button>
+				<button class="mybuttonout" id="out7">G</button>
+				<button class="mybuttonout" id="out8">H</button>
+				<button class="mybuttonout" id="out9">I</button>
+				<button class="mybuttonout" id="out10">J</button>
+				<button class="mybuttonout" id="out11">K</button>
+				<button class="mybuttonout" id="out12">L</button>
+				<button class="mybuttonout" id="out13">M</button>
+				<button class="mybuttonout" id="out14">N</button>
+				<button class="mybuttonout" id="out15">O</button>
+				<button class="mybuttonout" id="out16">P</button>
+				<button class="mybuttonout" id="out17">Q</button>
+				<button class="mybuttonout" id="out18">R</button>
+				<button class="mybuttonout" id="out19">S</button>
+				<button class="mybuttonout" id="out20">T</button>
+				<button class="mybuttonout" id="out21">U</button>
+				<button class="mybuttonout" id="out22">V</button>
+				<button class="mybuttonout" id="out23">W</button>
+				<button class="mybuttonout" id="out24">X</button>
+				<button class="mybuttonout" id="out25">Y</button>
+				<button class="mybuttonout" id="out26">Z</button>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-2">
+			<button class="btn btn-primary" id="update">Update</button>
+			</div>
+		</div>
+		<div class="row" id="num">
+			<div class="col">
+				<h1>Number of possible answers:</h1>
+			</div>
+			<div class="col" id="numpos">
+				&nbsp;
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-2">
+			<button class="btn btn-primary" id="print">Print</button>
+			</div>
+		</div>
+		<div class="row" id="ans">
+			<div class="col">
+				<h1>Possible answers:</h1>
+			</div>
+			<div class="col" id="anspos">
+				&nbsp;
+			</div>
+		</div>
+	</div>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+</body>
+</html>
