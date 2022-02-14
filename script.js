@@ -182,9 +182,11 @@ window.onload= () =>
 		{
 			document.getElementById("out".concat(i)).style.background="white"
 			document.getElementById("in".concat(i)).style.background="white"
-
-
 		}
+
+		numpos.innerHTML=""
+		anspos.innerHTML=""
+
 
 		// for(let i=0;i<5;i++)
 		// {
