@@ -102,7 +102,7 @@ window.onload= () =>
 
 		for(let i=1;i<=26;i++)
 		{
-			if(document.getElementById("in".concat(i)).style.background==="green")
+			if(document.getElementById("in"+i).style.background==="green")
 			{
 				isin.add(alpha[i])
 			}
@@ -110,7 +110,7 @@ window.onload= () =>
 
 		for(let i=1;i<=26;i++)
 		{
-			if(document.getElementById("out".concat(i)).style.background==="green")
+			if(document.getElementById("out"+i).style.background==="green")
 			{
 				isout.add(alpha[i])
 			}
@@ -121,9 +121,9 @@ window.onload= () =>
 		{
 			if(wordLetters[i].value==='')
 			{
-				mystery = mystery.concat('?')
+				mystery += '?'
 			}
-			else mystery = mystery.concat(wordLetters[i].value)
+			else mystery += wordLetters[i].value
 		}
 
 		let npos = new Set()
@@ -174,8 +174,8 @@ window.onload= () =>
 
 		for(let i=1;i<=26;i++)
 		{
-			document.getElementById("out".concat(i)).style.background="white"
-			document.getElementById("in".concat(i)).style.background="white"
+			document.getElementById("out"+i).style.background="white"
+			document.getElementById("in"+i).style.background="white"
 		}
 
 		numpos.innerHTML=""
