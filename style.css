@@ -20,6 +20,7 @@
 	font-size: 50px;
 	text-align: center;
 	caret-color: transparent;
+	text-transform: uppercase;
 }
 
 #isin input,
