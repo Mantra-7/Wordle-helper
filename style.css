@@ -1,3 +1,7 @@
+#top{
+	padding-top: 10px;
+}
+
 #mystery{
 	padding-top: 10px;
 }
@@ -26,4 +30,12 @@
 #numpos,
 #anspos{
 	font-size: 30px;
+}
+
+#switch{
+	margin-left: 25%;
+}
+
+#reset{
+	margin-left: 100%;
 }

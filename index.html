@@ -11,6 +11,16 @@
 </head>
 <body>
 	<div class="container">
+		<div class="row" id="top">
+			Possible Guesses
+			<div class="col-2 form-check form-switch">
+				<input class="form-check-input" type="checkbox" role="switch" id="switch"/>
+			</div>
+			Possible Answers
+			<div class="col-6">
+				<button class="btn btn-primary" id="reset">Reset</button>
+			</div>
+		</div>
 		<div class="row align-items-center" id="mystery">
 			<div class="col-2" id="wordlable">
 				<h1>Word:</h1>
@@ -21,9 +31,6 @@
 				<input class="letter" type="text" maxlength="1" placeholder="?" value="?">
 				<input class="letter" type="text" maxlength="1" placeholder="?" value="?">
 				<input class="letter" type="text" maxlength="1" placeholder="?" value="?">
-			</div>
-			<div class="col-2">
-				<button class="btn btn-primary" id="reset">Reset</button>
 			</div>
 		</div>
 		<div class="row align-items-center" id="isin" >
