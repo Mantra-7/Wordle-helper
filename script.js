@@ -94,11 +94,13 @@ window.onload= () =>
 				// 	return false;
 		}
 
-		Array.from(curr).forEach(i => {
-			if(isout.has(i)) return false;
-		})
-		
 		let x=0
+		Array.from(curr).forEach(i => {
+			if(isout.has(i)) x=1;
+		})
+
+		if(x===1) return false;
+		
 		Array.from(isin).forEach(i => {
 			if(curr.has(i)) {}
 			else x=1
