@@ -39,3 +39,130 @@
 #reset{
 	margin-left: 100%;
 }
+
+/* Tile states for letter inputs */
+.letter.tile--green{
+	background: #6aaa64;
+	color: white;
+	border-color: #6aaa64;
+}
+.letter.tile--yellow{
+	background: #c9b458;
+	color: white;
+	border-color: #c9b458;
+}
+.letter.tile--gray{
+	background: #787c7e;
+	color: white;
+	border-color: #787c7e;
+}
+
+/* Active alphabet buttons */
+.mybuttonin.active{
+	background: #cce5ff;
+	border-color: #66b0ff;
+}
+.mybuttonout.active{
+	background: #f8d7da;
+	border-color: #f5a2aa;
+}
+
+.result-word{
+	display: inline-block;
+	margin: 6px;
+	padding: 6px 10px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	cursor: pointer;
+	text-transform: uppercase;
+}
+.result-word:hover{ background:#f0f0f0 }
+
+/* Grid styles */
+#grid{ margin-top: 10px; }
+.row-grid{ display:flex; gap:0px; margin-bottom:0px; align-items:center }
+.grid-tile{
+	width:56px;
+	height:56px;
+	border:2px solid #ccc;
+	text-align:center;
+	font-size:28px;
+	text-transform:uppercase;
+	padding:0;
+	line-height:52px;
+}
+.grid-tile:focus{ outline:2px solid #66b0ff }
+
+/* keep existing tile classes for colors */
+.tile--green{ background: #6aaa64; color:white; border-color:#6aaa64 }
+.tile--yellow{ background: #c9b458; color:white; border-color:#c9b458 }
+.tile--gray{ background: #787c7e; color:white; border-color:#787c7e }
+
+/* conflict highlight */
+.grid-tile.conflict{ box-shadow: 0 0 0 2px crimson; }
+
+/* per-row reset button */
+.reset-row{
+	width:32px;
+	height:32px;
+	padding:0;
+	font-size:16px;
+	line-height:1;
+	flex-shrink:0;
+}
+
+/* instructions panel */
+#instructions{
+	max-width: 680px;
+}
+#instructions details > summary{
+	cursor: pointer;
+	font-weight: 600;
+	font-size: 0.95rem;
+	color: #444;
+	user-select: none;
+	padding: 4px 0;
+}
+#instructions details > summary:hover{ color: #000; }
+.instructions-list{
+	margin: 8px 0 4px 0;
+	padding-left: 1.4em;
+	font-size: 0.88rem;
+	color: #333;
+	line-height: 1.9;
+}
+.instructions-list kbd{
+	display: inline-block;
+	padding: 1px 6px;
+	font-size: 0.82rem;
+	font-family: ui-monospace, monospace;
+	background: #f3f3f3;
+	border: 1px solid #bbb;
+	border-bottom-width: 2px;
+	border-radius: 4px;
+	color: #222;
+}
+.instr-green{
+	display: inline-block;
+	background: #6aaa64;
+	color: white;
+	border-radius: 3px;
+	padding: 0 6px;
+	font-weight: 600;
+}
+.instr-yellow{
+	display: inline-block;
+	background: #c9b458;
+	color: white;
+	border-radius: 3px;
+	padding: 0 6px;
+	font-weight: 600;
+}
+.instr-gray{
+	display: inline-block;
+	background: #787c7e;
+	color: white;
+	border-radius: 3px;
+	padding: 0 6px;
+	font-weight: 600;
+}
