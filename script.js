@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		t.dataset.status = '';
 		// flag set during paste so the input handler doesn't interfere
 		t._pasting = false;
+		// flag: set by keydown when it already handled a letter, so input doesn't double-process
+		t._keydownHandled = false;
 		// flag: a keydown fired after the most recent mousedown — suppress color cycle on click
 		t._keyAfterMousedown = false;
 		t.addEventListener('mousedown', () => { t._keyAfterMousedown = false; });
@@ -54,18 +56,33 @@ document.addEventListener('DOMContentLoaded', () => {
 		t.addEventListener('input', () => {
 			// skip when a paste operation is handling the update itself
 			if(t._pasting) return;
-			// normalize to single uppercase character (keep last typed/pasted character)
-			t.value = (t.value || '').slice(-1).toUpperCase();
-			// if there's a letter, infer status from other tiles for same letter
-			if((t.value || '').trim()){
-				const L = (t.value || '').toLowerCase();
-				const col = Number(t.dataset.col);
-				const inferred = inferStatusForLetter(L, col);
-				if(inferred){
-					setTileStatus(t, inferred);
-				} else {
-					setTileStatus(t, 'gray');
+			// On desktop, keydown handles letter input and focus movement.
+			// On mobile (virtual keyboard), keydown may not fire — input fires instead.
+			// _keydownHandled is set by the keydown handler so we don't double-process.
+			if(t._keydownHandled){ t._keydownHandled = false; return; }
+
+			const rawVal = (t.value || '');
+			// normalize to single uppercase character (keep last typed character)
+			const letter = rawVal.replace(/[^a-zA-Z]/g, '').slice(-1).toUpperCase();
+			t.value = letter;
+
+			if(letter){
+				const L = letter.toLowerCase();
+				const colIdx = Number(t.dataset.col);
+				const rowEl = t.closest('.row-grid');
+				const allTiles = rowEl ? Array.from(rowEl.querySelectorAll('.grid-tile')) : [];
+
+				// set status on the current tile first
+				const inferred = inferStatusForLetter(L, colIdx);
+				setTileStatus(t, inferred || 'gray');
+
+				// ── move focus to next empty cell (same logic as keydown) ──────────
+				// find next empty tile to the right; wrap around if needed
+				let target = allTiles.find(tile => Number(tile.dataset.col) > colIdx && !(tile.value || '').trim());
+				if(!target){
+					target = allTiles.find(tile => Number(tile.dataset.col) < colIdx && !(tile.value || '').trim());
 				}
+				if(target) target.focus();
 			} else {
 				// cleared letter -> clear status
 				setTileStatus(t, '');
@@ -104,6 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				const inferred = inferStatusForLetter(L, targetCol);
 				if(inferred) setTileStatus(target, inferred); else setTileStatus(target, 'gray');
 				target.focus();
+				// tell the input handler that keydown already handled this keystroke
+				target._keydownHandled = true;
 				return;
 			}
 
