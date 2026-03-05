@@ -77,21 +77,33 @@ document.addEventListener('DOMContentLoaded', () => {
 			const rowIdx = Number(t.dataset.row);
 			const colIdx = Number(t.dataset.col);
 
-			// ── printable letter: overwrite in place ──────────────────────────
+			// ── printable letter: place in next empty cell to the right ──────
 			if(e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)){
 				// let Ctrl/Meta combos (Ctrl+V, Ctrl+C, etc.) pass through to the browser
 				if(e.ctrlKey || e.metaKey) return;
 				e.preventDefault();
-				const wasEmpty = !(t.value || '').trim();
-				t.value = e.key.toUpperCase();
-				const L = t.value.toLowerCase();
-				const inferred = inferStatusForLetter(L, colIdx);
-				if(inferred) setTileStatus(t, inferred); else setTileStatus(t, 'gray');
-				// only advance focus when tile was previously empty
-				if(wasEmpty){
-					const next = document.querySelector(`.grid-tile[data-row="${rowIdx}"][data-col="${Math.min(4, colIdx+1)}"]`);
-					if(next) next.focus();
+				const rowEl = t.closest('.row-grid');
+				const allTiles = rowEl ? Array.from(rowEl.querySelectorAll('.grid-tile')) : [];
+
+				// if the current tile is empty, use it directly
+				let target = !(t.value || '').trim() ? t : null;
+				if(!target){
+					// look for the closest empty tile to the RIGHT of current col (exclusive)
+					target = allTiles.find(tile => Number(tile.dataset.col) > colIdx && !(tile.value || '').trim());
 				}
+				// if not found to the right, wrap around from the start of the row
+				if(!target){
+					target = allTiles.find(tile => Number(tile.dataset.col) <= colIdx && !(tile.value || '').trim());
+				}
+				// if all cells are full, do nothing
+				if(!target) return;
+
+				target.value = e.key.toUpperCase();
+				const L = target.value.toLowerCase();
+				const targetCol = Number(target.dataset.col);
+				const inferred = inferStatusForLetter(L, targetCol);
+				if(inferred) setTileStatus(target, inferred); else setTileStatus(target, 'gray');
+				target.focus();
 				return;
 			}
 
@@ -265,95 +277,177 @@ document.addEventListener('DOMContentLoaded', () => {
 			// row also contains the same letter as green or yellow at a *different* position
 			// (the gray is an "excess copy" marker, not a contradiction).
 			function findConflict(newLetters, newStatuses){
-				// pre-compute: for each letter, does the new row have it as green/yellow at any position?
-				const newNonGrayPositions = {}; // letter -> [positions where it is green/yellow in new row]
+				// ── Pre-compute summaries of every previously entered row ─────────────
+				// For each previous row, derive per-letter facts we'll need for all checks.
+				//
+				// prevGreenPos[letter]  : Set of positions where letter was green (across ALL prev rows)
+				// prevYellowPos[letter] : Set of positions where letter was yellow (across ALL prev rows)
+				// prevAbsent[letter]    : true if letter appeared ONLY as gray in some row
+				//                        (i.e. completely absent from the hidden word,
+				//                         or its exact count was exhausted by that row's greens/yellows)
+				// prevExactCount[letter]: tightest exact count established by any excess-copy row
+				//                        (a row where letter had both gray AND green/yellow)
+
+				const prevGreenPos   = {}; // letter -> Set<pos>
+				const prevYellowPos  = {}; // letter -> Set<pos>
+				const prevAbsent     = new Set(); // letters confirmed completely absent
+				const prevExactCount = {}; // letter -> number
+
+				for(const prev of enteredRows){
+					// tally per letter within this row
+					const rowGreen  = {}; // letter -> count
+					const rowYellow = {}; // letter -> count
+					let   rowGrayLetters = new Set();
+
+					for(let p = 0; p < prev.letters.length; p++){
+						const l = (prev.letters[p] || '').toLowerCase();
+						const s = prev.statuses[p] || '';
+						if(!l) continue;
+						if(s === 'green'){
+							if(!prevGreenPos[l]) prevGreenPos[l] = new Set();
+							prevGreenPos[l].add(p);
+							rowGreen[l] = (rowGreen[l] || 0) + 1;
+						} else if(s === 'yellow'){
+							if(!prevYellowPos[l]) prevYellowPos[l] = new Set();
+							prevYellowPos[l].add(p);
+							rowYellow[l] = (rowYellow[l] || 0) + 1;
+						} else if(s === 'gray'){
+							rowGrayLetters.add(l);
+						}
+					}
+
+					for(const l of rowGrayLetters){
+						const nonGray = (rowGreen[l] || 0) + (rowYellow[l] || 0);
+						if(nonGray === 0){
+							// letter is entirely absent in the hidden word
+							prevAbsent.add(l);
+						} else {
+							// excess-copy: exact count = nonGray for this row
+							if(prevExactCount[l] === undefined || nonGray < prevExactCount[l]){
+								prevExactCount[l] = nonGray;
+							}
+						}
+					}
+				}
+
+				// ── Pre-compute summary of the NEW row ────────────────────────────────
+				const newGreenPos  = {}; // letter -> [positions]
+				const newYellowPos = {}; // letter -> [positions]
+				const newGrayPos   = {}; // letter -> [positions]
+
 				for(let p = 0; p < newLetters.length; p++){
 					const l = (newLetters[p] || '').toLowerCase();
 					const s = newStatuses[p] || '';
 					if(!l) continue;
-					if(s === 'green' || s === 'yellow'){
-						if(!newNonGrayPositions[l]) newNonGrayPositions[l] = [];
-						newNonGrayPositions[l].push(p);
+					if(s === 'green'){
+						if(!newGreenPos[l])  newGreenPos[l]  = [];
+						newGreenPos[l].push(p);
+					} else if(s === 'yellow'){
+						if(!newYellowPos[l]) newYellowPos[l] = [];
+						newYellowPos[l].push(p);
+					} else if(s === 'gray'){
+						if(!newGrayPos[l])   newGrayPos[l]   = [];
+						newGrayPos[l].push(p);
 					}
 				}
 
-				// ── Check 1: new row violates a previously established maxCount ─────
-				// Derive maxCount from enteredRows (same logic as computeCandidates).
-				const prevMaxCount = {}; // letter -> tightest max seen so far
-				for(const prev of enteredRows){
-					const rowNonGray = {};
-					const rowHasGray = {};
-					for(let p = 0; p < prev.letters.length; p++){
-						const l = (prev.letters[p] || '').toLowerCase();
-						const s = prev.statuses[p] || '';
-						if(!l) continue;
-						if(s === 'green' || s === 'yellow') rowNonGray[l] = (rowNonGray[l] || 0) + 1;
-						if(s === 'gray') rowHasGray[l] = true;
-					}
-					for(const l of new Set([...Object.keys(rowNonGray), ...Object.keys(rowHasGray)])){
-						const nonGray = rowNonGray[l] || 0;
-						const hasGray = !!rowHasGray[l];
-						if(hasGray && nonGray > 0){
-							// excess-copy row → exact max = nonGray count in that row
-							if(prevMaxCount[l] === undefined || nonGray < prevMaxCount[l]){
-								prevMaxCount[l] = nonGray;
-							}
-						} else if(hasGray && nonGray === 0){
-							prevMaxCount[l] = 0;
+				// Helper: non-gray count for a letter in the new row
+				function newNonGrayCount(l){
+					return (newGreenPos[l] || []).length + (newYellowPos[l] || []).length;
+				}
+
+				// ── Check A: green position must stay green ───────────────────────────
+				// If letter L was green at position P before, new row must also have L
+				// green at P (any other color is a contradiction).
+				for(const l in prevGreenPos){
+					for(const p of prevGreenPos[l]){
+						if(p >= newLetters.length) continue;
+						const newL = (newLetters[p] || '').toLowerCase();
+						const newS = newStatuses[p] || '';
+						if(newL !== l) continue; // different letter typed — unrelated
+						if(newS !== 'green'){
+							return { pos: p, letter: l, existing: 'green', incoming: newS };
 						}
 					}
 				}
-				// Count non-gray occurrences of each letter in the new row
-				const newNonGrayCount = {};
-				for(const l in newNonGrayPositions) newNonGrayCount[l] = newNonGrayPositions[l].length;
-				for(const l in newNonGrayCount){
-					if(prevMaxCount[l] !== undefined && newNonGrayCount[l] > prevMaxCount[l]){
+
+				// ── Check B: yellow position must NOT be green ────────────────────────
+				// If letter L was yellow at position P before, the hidden word does NOT
+				// have L at P. So new row cannot mark L green at P.
+				for(const l in prevYellowPos){
+					for(const p of prevYellowPos[l]){
+						if(p >= newLetters.length) continue;
+						const newL = (newLetters[p] || '').toLowerCase();
+						const newS = newStatuses[p] || '';
+						if(newL !== l) continue;
+						if(newS === 'green'){
+							return { pos: p, letter: l, existing: 'yellow', incoming: 'green' };
+						}
+					}
+				}
+
+				// ── Check C: absent letter cannot appear as green or yellow ──────────
+				// If a previous row established that letter L is completely absent
+				// (gray with no green/yellow in that row), new row cannot have L as
+				// green or yellow anywhere.
+				for(const l of prevAbsent){
+					const nonGrayPositions = [...(newGreenPos[l] || []), ...(newYellowPos[l] || [])];
+					if(nonGrayPositions.length > 0){
+						return { pos: nonGrayPositions[0], letter: l, existing: 'absent (gray)', incoming: newStatuses[nonGrayPositions[0]] };
+					}
+				}
+
+				// ── Check D: confirmed-green letter cannot be gray everywhere ───────
+				// If letter L was ever green, the word contains at least 1 copy of L.
+				// So the new row must have at least 1 non-gray copy of L.
+				// A gray on an *excess* copy is fine (e.g. DADDY with only 1 D in word).
+				for(const l in prevGreenPos){
+					if(newGrayPos[l] && newGrayPos[l].length > 0){
+						// Only a conflict if there are NO non-gray copies of L in the new row
+						// (meaning the user marked every occurrence of L as gray, which
+						//  contradicts the earlier green).
+						if(newNonGrayCount(l) === 0){
+							return { pos: newGrayPos[l][0], letter: l, existing: 'green (confirmed present)', incoming: 'gray' };
+						}
+					}
+				}
+
+				// ── Check E: confirmed-yellow letter cannot be gray anywhere ─────────
+				// Similarly, if L was yellow before (present in word), new row can't mark
+				// L as gray unless the exact count is already accounted for by greens.
+				for(const l in prevYellowPos){
+					if(newGrayPos[l] && newGrayPos[l].length > 0){
+						// Exception: if there's a known exact count and the new row's green
+						// count already meets it, the gray is an excess-copy marker — valid.
+						const exactMax = prevExactCount[l];
+						const newGreens = (newGreenPos[l] || []).length;
+						if(exactMax !== undefined && newGreens >= exactMax) continue;
+						// Also valid if the new row has enough non-gray to cover the min count
+						// established by yellows AND a gray co-exists (excess copy in new row).
+						// We only flag it if there's no non-gray at all for this letter in new row.
+						if(newNonGrayCount(l) === 0){
+							return { pos: newGrayPos[l][0], letter: l, existing: 'yellow (confirmed present)', incoming: 'gray' };
+						}
+					}
+				}
+
+				// ── Check F: exact count not exceeded ────────────────────────────────
+				// If a previous excess-copy row set an exact max for letter L, the new
+				// row's non-gray count must not exceed it.
+				for(const l in prevExactCount){
+					const max = prevExactCount[l];
+					const cnt = newNonGrayCount(l);
+					if(cnt > max){
+						const allNonGray = [...(newGreenPos[l] || []), ...(newYellowPos[l] || [])];
 						return {
-							pos: newNonGrayPositions[l][prevMaxCount[l]], // first excess position
+							pos: allNonGray[max], // first excess position
 							letter: l,
-							existing: `max ${prevMaxCount[l]}`,
-							incoming: `${newNonGrayCount[l]} non-gray`
+							existing: `max ${max}`,
+							incoming: `${cnt} non-gray`
 						};
 					}
 				}
 
-				// ── Check 2: same-position same-letter different-color ────────────
-				for(const prev of enteredRows){
-					const prevNonGrayPositions = {};
-					for(let p = 0; p < prev.letters.length; p++){
-						const l = (prev.letters[p] || '').toLowerCase();
-						const s = prev.statuses[p] || '';
-						if(!l) continue;
-						if(s === 'green' || s === 'yellow'){
-							if(!prevNonGrayPositions[l]) prevNonGrayPositions[l] = [];
-							prevNonGrayPositions[l].push(p);
-						}
-					}
-
-					for(let p = 0; p < newLetters.length; p++){
-						const a = (prev.letters[p] || '').toLowerCase();
-						const aStatus = prev.statuses[p] || '';
-						const b = (newLetters[p] || '').toLowerCase();
-						const bStatus = newStatuses[p] || '';
-						if(!a || !b || a !== b || !aStatus || !bStatus) continue;
-						if(aStatus === bStatus) continue;
-
-						// Exception 1: new row goes gray — valid if letter is non-gray elsewhere in new row
-						if(bStatus === 'gray'){
-							const otherNonGray = (newNonGrayPositions[b] || []).filter(op => op !== p);
-							if(otherNonGray.length > 0) continue;
-						}
-
-						// Exception 2: prev row was an excess-copy gray — valid if letter is
-						// non-gray elsewhere in that prev row (so the gray wasn't "absent")
-						if(aStatus === 'gray'){
-							const prevOtherNonGray = (prevNonGrayPositions[a] || []).filter(op => op !== p);
-							if(prevOtherNonGray.length > 0) continue;
-						}
-
-						return { pos: p, letter: a, existing: aStatus, incoming: bStatus };
-					}
-				}
 				return null;
 			}
 
@@ -626,6 +720,37 @@ document.addEventListener('DOMContentLoaded', () => {
 		lastResults = results;
 		// render results into the page (plain uppercase text)
 		showResults(results);
+	});
+
+	// ── Global keydown: handle letter presses when no tile is focused ────────
+	// If focus is outside the grid entirely, redirect the letter to the first
+	// empty cell of the last (bottom-most) unlocked row.
+	document.addEventListener('keydown', (e) => {
+		if(e.key.length !== 1 || !/^[a-zA-Z]$/.test(e.key)) return;
+		if(e.ctrlKey || e.metaKey || e.altKey) return;
+		// only act when the focused element is NOT already a grid tile
+		if(document.activeElement && document.activeElement.classList.contains('grid-tile')) return;
+		// find the last row that still has at least one empty tile
+		const allRows = Array.from(grid.querySelectorAll('.row-grid'));
+		let targetRow = null;
+		for(let i = allRows.length - 1; i >= 0; i--){
+			const tiles = Array.from(allRows[i].querySelectorAll('.grid-tile'));
+			if(tiles.some(tile => !(tile.value || '').trim() && !tile.disabled)){
+				targetRow = allRows[i];
+				break;
+			}
+		}
+		if(!targetRow) return;
+		const tiles = Array.from(targetRow.querySelectorAll('.grid-tile'));
+		const firstEmpty = tiles.find(tile => !(tile.value || '').trim() && !tile.disabled);
+		if(!firstEmpty) return;
+		e.preventDefault();
+		firstEmpty.value = e.key.toUpperCase();
+		const col = Number(firstEmpty.dataset.col);
+		const L = firstEmpty.value.toLowerCase();
+		const inferred = inferStatusForLetter(L, col);
+		if(inferred) setTileStatus(firstEmpty, inferred); else setTileStatus(firstEmpty, 'gray');
+		firstEmpty.focus();
 	});
 
 	// create initial rows (1 by default) — always keep one extra row after Enter
